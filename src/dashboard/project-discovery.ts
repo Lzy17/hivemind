@@ -26,8 +26,9 @@ export class ProjectDiscovery {
   private searchPaths: string[] = [];
 
   constructor() {
-    // Common project directories
+    // Common project directories + current working directory
     this.searchPaths = [
+      process.cwd(), // Add current working directory first
       join(homedir(), 'Projects'),
       join(homedir(), 'Documents'),
       join(homedir(), 'Development'),
@@ -48,6 +49,21 @@ export class ProjectDiscovery {
       try {
         await fs.access(searchPath);
         debug(`Searching in: ${searchPath}`);
+        
+        // First, check if the search path itself contains a .claude directory
+        const claudePath = join(searchPath, '.claude');
+        try {
+          const claudeStat = await fs.stat(claudePath);
+          if (claudeStat.isDirectory()) {
+            const project = await this.analyzeProject(searchPath, claudePath, activeClaudes);
+            allProjects.push(project);
+            debug(`Found project with .claude dir at search root: ${searchPath}`);
+          }
+        } catch {
+          // No .claude directory in search root
+        }
+        
+        // Then search subdirectories
         const found = await this.searchDirectory(searchPath, activeClaudes);
         debug(`Found ${found.length} projects in ${searchPath}`);
         allProjects.push(...found);

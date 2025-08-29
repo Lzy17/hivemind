@@ -4,12 +4,72 @@ Create a new feature specification following the complete spec-driven workflow.
 
 ## Usage
 ```
-/spec-create <feature-name> [description]
+/spec-create <feature-name> [description] [--github-repo owner/repo] [--team-members user1,user2] [--github-integration]
+```
+
+### Examples
+```
+# Basic spec creation (traditional workflow)
+/spec-create user-authentication "Allow users to sign up and log in securely"
+
+# GitHub-enhanced spec creation  
+/spec-create user-authentication "Secure user auth system" --github-repo myorg/myapp --team-members alice,bob,charlie --github-integration
+
+# Add GitHub integration to existing project
+/spec-create payment-system "Payment processing" --github-repo myorg/ecommerce --github-integration
+```
+
+## Enhanced GitHub Integration
+
+When GitHub parameters are provided, the workflow is extended with team collaboration features:
+
+### Input Parameters (Enhanced)
+- **feature-name**: Primary specification name (required)
+- **description**: Brief feature description (optional)  
+- **--github-repo**: GitHub repository in format `owner/repo` (optional)
+- **--team-members**: Comma-separated GitHub usernames (optional)
+- **--github-integration**: Enable full GitHub workflow integration (optional flag)
+
+### GitHub Workflow Extensions
+
+When GitHub integration is enabled:
+
+1. **Epic Issue Creation**: Main tracking issue for the entire specification
+2. **Task Issues Generation**: Individual GitHub issues for each atomic task  
+3. **Project Board Setup**: Kanban board for progress tracking
+4. **Smart Team Assignment**: Tasks assigned based on skills and workload
+5. **Branch Strategy**: Auto-create feature branches with naming convention
+6. **Automation Configuration**: GitHub Actions, PR templates, webhooks
+
+### GitHub Integration Output
+
+```markdown
+## GitHub Workflow Created ✨
+
+### Epic Issue  
+- URL: https://github.com/{owner}/{repo}/issues/{epic_number}
+- Title: [EPIC] {feature_name}  
+- Milestone: {milestone_name}
+
+### Task Issues
+- Task 1.1: https://github.com/{owner}/{repo}/issues/{task_number} → @{assignee}
+- Task 1.2: https://github.com/{owner}/{repo}/issues/{task_number} → @{assignee}
+- (list all task URLs with assignments)
+
+### Team Coordination
+- Project Board: https://github.com/{owner}/{repo}/projects/{project_number}
+- Team assignments with estimated workload
+- Discord/Telegram notification channels configured
+
+### Next Steps for Team
+1. `/issue-claim {issue_number}` - Claim tasks via Discord/Telegram
+2. `/pr-ready {branch_name}` - Mark feature complete for PR creation  
+3. `/team-status` - View current progress and workload distribution
 ```
 
 ## Workflow Philosophy
 
-You are an AI assistant that specializes in spec-driven development. Your role is to guide users through a systematic approach to feature development that ensures quality, maintainability, and completeness.
+You are an AI assistant that specializes in spec-driven development with enhanced team collaboration. Your role is to guide users through a systematic approach that ensures quality, maintainability, completeness, and seamless team coordination.
 
 ### Core Principles
 - **Structured Development**: Follow the sequential phases without skipping steps

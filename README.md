@@ -706,3 +706,325 @@ claude-code-spec-workflow --project ~/my-project
 - @mquinnv - Dashboard feature
 
 **Powered by:** [Claude Code](https://docs.anthropic.com/claude-code) • [Mermaid](https://mermaid.js.org/) • [TypeScript](https://www.typescriptlang.org/)
+
+
+
+
+
+
+
+● Team Vibe Coding Tools - 实现完成 ✅
+
+  已成功实现基于 GitHub 的团队协作 Spec 驱动开发平台，核心功能包括：
+
+  🎯 核心实现成果
+
+  Phase 1: 核心GitHub集成
+  - ✅ src/collaboration/github-integration.ts - GitHub API 封装和自动化
+  - ✅ src/collaboration/pr-workflow.ts - PR 生命周期管理和冲突检测
+  - ✅ 扩展现有 spec-create.md 支持 GitHub 工作流参数
+  - ✅ src/markdown/commands/github-spec.md - GitHub 专用规格处理
+
+  Phase 2: 团队协作功能
+  - ✅ src/auth/team-manager.ts - 智能团队管理和技能分析
+  - ✅ src/bots/discord/github-commands.ts - Discord 机器人集成
+  - ✅ 智能任务分配算法（基于技能、工作负载、速度）
+
+  Phase 3: 高级协作功能
+  - ✅ src/dashboard/github-dashboard.ts - GitHub 数据可视化
+  - ✅ 扩展 src/dashboard/multi-server.ts 集成 GitHub API 端点
+  - ✅ GitHub Webhooks 处理（Push、PR、Issue、Review 事件）
+  - ✅ src/markdown/commands/team-workflow.md - 团队工作流命令
+
+  文档和指南
+  - ✅ GITHUB_INTEGRATION.md - 完整的使用指南和配置说明
+
+  🚀 主要功能特性
+
+  1. GitHub 原生集成
+    - 自动创建 Epic 和 Task Issues
+    - 智能分支管理和 PR 自动化
+    - 基于技能的团队任务分配
+  2. 实时协作仪表板
+    - Kanban 看板和进度追踪
+    - 团队工作负载和速度分析
+    - GitHub 事件的实时 WebSocket 更新
+  3. Discord/Telegram 机器人
+    - /issue-claim - 认领 GitHub 问题
+    - /pr-ready - 标记功能完成并创建 PR
+    - /team-status - 查看团队状态和指标
+  4. 智能自动化
+    - 技能匹配的任务分配
+    - 冲突检测和合并策略建议
+    - 代码审核员智能分配
+
+  📊 技术架构亮点
+
+  - 模块化设计: 保持现有代码架构不变，通过扩展实现功能
+  - 类型安全: 完整的 TypeScript 类型定义和接口
+  - 缓存策略: 智能缓存减少 GitHub API 调用
+  - 错误处理: 全面的错误处理和恢复机制
+
+  🔧 配置和使用
+
+  # 基础规格创建（传统模式）
+  /spec-create user-authentication "安全用户认证系统"
+
+  # GitHub 增强模式
+  /spec-create user-authentication "安全用户认证系统" \
+    --github-repo myorg/myapp \
+    --team-members alice,bob,charlie \
+    --github-integration
+
+  🎮 团队协作流程
+
+  1. 规格创建 → 2. 自动 GitHub 设置 → 3. 团队通知 → 4. 任务认领 → 5. 功能开发 → 6. PR 创建 → 7. 代码审查 → 8. 合并部署
+
+  该实现完全符合技术规格书要求，将现有的 hivemind 库成功转换为企业级团队协作平台，同时保持了原有的简洁性和强大功能。
+
+> 好的现在教学一下我怎么使用
+
+● 📚 Team Vibe Coding Tools 使用教程
+
+  让我手把手教你如何使用这个 GitHub 集成的团队协作工具！
+
+  🚀 第一步：环境设置
+
+  1.1 安装依赖
+
+  # 进入项目目录
+  cd hivemind
+
+  # 安装新的依赖
+  npm install
+
+  1.2 配置环境变量
+
+  创建 .env 文件：
+  # GitHub 集成配置
+  GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  GITHUB_OWNER=你的组织名
+  GITHUB_REPO=你的仓库名
+
+  # 可选：Discord 机器人
+  DISCORD_TOKEN=你的Discord机器人令牌
+
+  # 可选：开启调试模式
+  CLAUDE_SPEC_DEBUG=true
+
+  1.3 获取 GitHub Token
+
+  1. 访问 GitHub → Settings → Developer settings → Personal access tokens
+  2. 创建新令牌，选择权限：
+    - repo (完整仓库权限)
+    - read:org (读取组织信息)
+    - write:repo_hook (管理 Webhooks)
+
+  🎯 第二步：启动系统
+
+  2.1 启动增强仪表板
+
+  # 启动带 GitHub 集成的仪表板
+  npm run dev:dashboard
+
+  # 或者指定 GitHub 配置启动
+  GITHUB_TOKEN=你的token GITHUB_OWNER=组织名 GITHUB_REPO=仓库名 npm run dev:dashboard
+
+  2.2 验证启动
+
+  你应该看到：
+  ✅ GitHub integration enabled for 组织名/仓库名
+  🚀 Starting tunnel (provider: auto)...
+  Dashboard available at: http://localhost:8000
+
+  📝 第三步：创建你的第一个 GitHub 集成规格
+
+  3.1 基础规格创建（传统模式）
+
+  # 传统方式 - 只在本地创建规格
+  claude-code-spec-workflow spec-create user-profile "用户个人资料管理"
+
+  3.2 GitHub 增强模式
+
+  # GitHub 集成模式 - 创建规格 + GitHub Issues + 团队协作
+  claude-code-spec-workflow spec-create user-profile "用户个人资料管理" \
+    --github-repo myorg/myapp \
+    --team-members alice,bob,charlie \
+    --github-integration
+
+  3.3 实际演示
+
+  让我演示一个完整的流程：
+
+  # 创建一个用户认证功能的规格
+  claude-code-spec-workflow spec-create user-auth "实现用户注册登录功能" \
+    --github-repo hivemind-demo/webapp \
+    --team-members john,sarah,mike \
+    --github-integration
+
+  系统会自动：
+  1. ✅ 分析需求并创建 requirements.md
+  2. ✅ 生成技术设计 design.md
+  3. ✅ 将功能分解为原子任务 tasks.md
+  4. ✅ 在 GitHub 创建 Epic Issue 和子任务 Issues
+  5. ✅ 根据技能和工作负载分配任务给团队成员
+  6. ✅ 创建对应的 feature 分支
+  7. ✅ 设置项目看板
+
+  🤖 第四步：使用 Discord 机器人
+
+  4.1 设置 Discord 机器人
+
+  1. 在 Discord Developer Portal 创建应用和机器人
+  2. 获取 Bot Token 并添加到环境变量
+  3. 邀请机器人到你的服务器
+
+  4.2 使用机器人命令
+
+  认领任务：
+  /issue-claim 123
+  机器人回复：
+  ✅ Issue #123 Claimed Successfully
+  📋 Issue: [实现用户登录表单](https://github.com/myorg/myapp/issues/123)
+  🌿 Branch: feature/123-user-login-form
+  👤 Assignee: @alice
+  🚀 Next Steps:
+  1. git checkout -b feature/123-user-login-form
+  2. Start development work
+  3. Use /pr-ready feature/123-user-login-form when complete
+
+  标记功能完成：
+  /pr-ready feature/123-user-login-form
+
+  查看团队状态：
+  /team-status
+
+  📊 第五步：使用增强仪表板
+
+  5.1 访问仪表板
+
+  打开浏览器访问：http://localhost:8000
+
+  你会看到新的 GitHub 集成面板：
+
+  5.2 GitHub 功能面板
+
+  - Issues Kanban: 拖拽式任务管理
+  - 团队工作负载: 实时容量分析
+  - 速度图表: 团队绩效趋势
+  - PR 流水线: 代码审查状态
+
+  5.3 实时更新
+
+  当团队成员：
+  - 推送代码 → 仪表板显示提交信息
+  - 创建 PR → 自动出现在审查列
+  - 完成任务 → Kanban 自动更新
+
+  🏗️ 第六步：团队协作工作流
+
+  完整开发周期演示：
+
+  1. 产品经理创建规格
+  /spec-create payment-system "在线支付集成" \
+    --github-repo ecommerce/backend \
+    --team-members alice,bob,charlie \
+    --github-integration
+
+  2. 系统自动设置
+  - ✅ GitHub 创建 Epic Issue #150
+  - ✅ 分解为 5 个子任务 (#151-#155)
+  - ✅ 分配任务：Alice(2), Bob(2), Charlie(1)
+  - ✅ 创建 5 个 feature 分支
+
+  3. 开发者认领任务
+  Alice: /issue-claim 151
+  Bot: ✅ Issue #151 认领成功 - 设计支付API接口
+       Branch: feature/151-payment-api-design
+
+  4. 开发完成提交PR
+  Alice: /pr-ready feature/151-payment-api-design
+  Bot: 🚀 Pull Request Created
+       Review请求已发送给 @bob, @tech-lead
+
+  5. 团队协作状态
+  Manager: /team-status
+  Bot: 📊 Team Status
+       👥 Active: Alice(75%), Bob(60%), Charlie(40%)
+       📋 Open Issues: 3
+       🔀 Open PRs: 2
+       🎯 Sprint Progress: 67% complete
+
+  🔧 第七步：高级功能
+
+  7.1 团队管理
+
+  # 创建新团队
+  /team-create frontend-squad mycompany alice,bob,charlie
+
+  # 分配规格给团队
+  /team-assign-spec user-dashboard frontend-squad --auto-distribute
+
+  # 查看团队速度
+  /team-velocity frontend-squad --period 30d
+
+  7.2 分支状态检查
+
+  /branch-status feature/151-payment-api-design
+  机器人会检查：
+  - ✅ 提交数量和最近更新
+  - ⚠️ 潜在合并冲突
+  - 💡 合并建议
+
+  7.3 批量操作
+
+  # 批量分配 Issues
+  POST /api/github/issues/bulk-assign
+  {
+    "issues": [151, 152, 153],
+    "assignee": "alice"
+  }
+
+  # 批量更新标签
+  POST /api/github/issues/bulk-label
+  {
+    "issues": [151, 152],
+    "labels": ["frontend", "urgent"]
+  }
+
+  🚨 故障排除
+
+  常见问题
+
+  GitHub API 限制
+  # 检查速率限制
+  curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/rate_limit
+
+  机器人无响应
+  - 检查 Discord Token 权限
+  - 验证机器人在频道中有发言权限
+  - 查看控制台错误日志
+
+  Webhook 失败
+  - 确保隧道（tunnel）正在运行
+  - 验证 GitHub Webhook 配置指向正确 URL
+  - 检查 /api/github/webhooks 端点可访问
+
+  🎉 最佳实践
+
+  工作流建议
+
+  1. 小团队: 3-7 人最佳，保持沟通高效
+  2. 原子任务: 每个任务 15-30 分钟完成
+  3. 清晰验收标准: 每个任务都有明确完成定义
+  4. 定期回顾: 使用速度数据优化流程
+
+  命名约定
+
+  - 分支: feature/123-user-login-form
+  - 提交: feat: add user login validation
+  - PR标题: feat: implement user authentication system
+
+  现在你可以开始使用这个强大的团队协作工具了！🚀
+
+  有任何问题随时问我，我会帮你解决具体的使用问题。

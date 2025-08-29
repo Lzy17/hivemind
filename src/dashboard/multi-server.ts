@@ -14,6 +14,9 @@ import { debug } from './logger';
 import { TunnelManager, TunnelOptions, TunnelProviderError } from './tunnel';
 import { CloudflareProvider } from './tunnel/cloudflare-provider-native';
 import { NgrokProvider } from './tunnel/ngrok-provider-native';
+import { GitHubIntegration } from '../collaboration/github-integration';
+import { TeamManager } from '../auth/team-manager';
+import { GitHubDashboard } from './github-dashboard';
 
 interface ProjectState {
   project: DiscoveredProject;
@@ -65,6 +68,9 @@ export interface MultiDashboardOptions {
   tunnel?: boolean;
   tunnelPassword?: string;
   tunnelProvider?: string;
+  githubToken?: string;
+  githubOwner?: string;
+  githubRepo?: string;
 }
 
 export class MultiProjectDashboardServer {
@@ -75,11 +81,26 @@ export class MultiProjectDashboardServer {
   private discovery: ProjectDiscovery;
   private rescanInterval?: ReturnType<typeof setInterval>;
   private tunnelManager?: TunnelManager;
+  private github?: GitHubIntegration;
+  private teamManager?: TeamManager;
+  private githubDashboard?: GitHubDashboard;
 
   constructor(options: MultiDashboardOptions) {
     this.options = options;
     this.discovery = new ProjectDiscovery();
     this.app = fastify({ logger: false });
+    
+    // Initialize GitHub integration if credentials provided
+    if (options.githubToken && options.githubOwner && options.githubRepo) {
+      this.github = new GitHubIntegration({
+        token: options.githubToken,
+        owner: options.githubOwner,
+        repo: options.githubRepo,
+      });
+      this.teamManager = new TeamManager(this.github);
+      this.githubDashboard = new GitHubDashboard(this.github, this.teamManager);
+      console.log(`✅ GitHub integration enabled for ${options.githubOwner}/${options.githubRepo}`);
+    }
   }
 
   async start() {
@@ -119,28 +140,26 @@ export class MultiProjectDashboardServer {
     });
 
     // Special handling for app.js in development mode
-    // In dev mode, app.js might be in dist/dashboard while we're running from src/dashboard
-    this.app.get('/app.js', async (request, reply) => {
-      const { existsSync } = require('fs');
-      const appJsPath = join(__dirname, 'app.js');
-      const distAppJsPath = join(__dirname, '..', '..', 'dist', 'dashboard', 'app.js');
-      
-      // Try current directory first (production)
-      if (existsSync(appJsPath)) {
-        return reply.sendFile('app.js');
-      }
-      // Try dist directory (development)
-      else if (existsSync(distAppJsPath)) {
-        const { readFile } = require('fs/promises');
-        const content = await readFile(distAppJsPath);
-        reply.type('application/javascript');
-        return reply.send(content);
-      }
-      // File not found
-      else {
-        return reply.code(404).send({ error: 'app.js not found - run npm run build:dashboard' });
-      }
-    });
+    // Only add this route if app.js doesn't exist in the static file directory
+    const { existsSync } = require('fs');
+    const appJsPath = join(__dirname, 'app.js');
+    if (!existsSync(appJsPath)) {
+      this.app.get('/app.js', async (request, reply) => {
+        const distAppJsPath = join(__dirname, '..', '..', 'dist', 'dashboard', 'app.js');
+        
+        // Try dist directory (development)
+        if (existsSync(distAppJsPath)) {
+          const { readFile } = require('fs/promises');
+          const content = await readFile(distAppJsPath);
+          reply.type('application/javascript');
+          return reply.send(content);
+        }
+        // File not found
+        else {
+          return reply.code(404).send({ error: 'app.js not found - run npm run build:dashboard' });
+        }
+      });
+    }
 
     // WebSocket endpoint
     const self = this;
@@ -255,6 +274,84 @@ export class MultiProjectDashboardServer {
         reply.code(404).send({ error: 'Document not found' });
       }
     });
+
+    // GitHub API endpoints
+    if (this.github && this.githubDashboard && this.teamManager) {
+      this.app.get('/api/github/issues', async () => {
+        return await this.github!.getOpenIssues();
+      });
+
+      this.app.get('/api/github/prs', async () => {
+        return await this.github!.getPendingPRs();
+      });
+
+      this.app.get('/api/github/kanban', async () => {
+        return await this.githubDashboard!.renderPRKanban([]);
+      });
+
+      this.app.get('/api/github/team/:teamId/metrics', async (request) => {
+        const { teamId } = request.params as { teamId: string };
+        return await this.githubDashboard!.getTeamMetrics(teamId);
+      });
+
+      this.app.get('/api/github/team/:teamId/velocity', async (request) => {
+        const { teamId } = request.params as { teamId: string };
+        return await this.githubDashboard!.renderVelocityChart(teamId);
+      });
+
+      this.app.get('/api/github/trends', async () => {
+        return await this.githubDashboard!.renderCodeQualityTrends();
+      });
+
+      this.app.post('/api/github/issues/:issueNumber/assign', async (request, reply) => {
+        const { issueNumber } = request.params as { issueNumber: string };
+        const { assignee } = request.body as { assignee: string };
+        
+        try {
+          const issues = await this.github!.getOpenIssues();
+          const issue = issues.find(i => i.number === parseInt(issueNumber));
+          
+          if (!issue) {
+            reply.code(404).send({ error: 'Issue not found' });
+            return;
+          }
+
+          await this.github!.autoAssignIssue(issue, [{ username: assignee, skills: [], workload: 0 }]);
+          return { success: true, issue: issue.number, assignee };
+        } catch (error) {
+          reply.code(500).send({ error: 'Failed to assign issue', details: error });
+        }
+      });
+
+      this.app.post('/api/github/teams', async (request, reply) => {
+        const { name, githubOrg } = request.body as { name: string; githubOrg: string };
+        
+        try {
+          const team = await this.teamManager!.createTeam(name, githubOrg);
+          return { success: true, team };
+        } catch (error) {
+          reply.code(500).send({ error: 'Failed to create team', details: error });
+        }
+      });
+
+      this.app.get('/api/github/teams', async () => {
+        return this.teamManager!.getAllTeams();
+      });
+
+      // GitHub webhooks endpoint
+      this.app.post('/api/github/webhooks', async (request, reply) => {
+        const event = request.headers['x-github-event'] as string;
+        const payload = request.body as any;
+        
+        try {
+          await this.handleGitHubWebhook(event, payload);
+          return { success: true };
+        } catch (error) {
+          console.error('GitHub webhook error:', error);
+          reply.code(500).send({ error: 'Webhook processing failed' });
+        }
+      });
+    }
 
     // Tunnel API endpoints
     this.app.get('/api/tunnel/status', async () => {
@@ -972,6 +1069,98 @@ export class MultiProjectDashboardServer {
 
   getTunnelStatus() {
     return this.tunnelManager?.getStatus() || { active: false };
+  }
+
+  private async handleGitHubWebhook(event: string, payload: any): Promise<void> {
+    debug(`GitHub webhook received: ${event}`);
+    
+    switch (event) {
+      case 'push':
+        await this.handlePushEvent(payload);
+        break;
+      case 'pull_request':
+        await this.handlePREvent(payload);
+        break;
+      case 'issues':
+        await this.handleIssueEvent(payload);
+        break;
+      case 'pull_request_review':
+        await this.handleReviewEvent(payload);
+        break;
+      default:
+        debug(`Unhandled GitHub event: ${event}`);
+    }
+  }
+
+  private async handlePushEvent(payload: any): Promise<void> {
+    const { repository, ref, commits } = payload;
+    const branch = ref.replace('refs/heads/', '');
+    
+    debug(`Push to ${repository.full_name}:${branch} - ${commits.length} commits`);
+    
+    // Broadcast push event to connected clients
+    this.broadcast({
+      type: 'github:push',
+      data: {
+        repository: repository.full_name,
+        branch,
+        commits: commits.length,
+        author: commits[0]?.author?.name,
+      },
+    });
+  }
+
+  private async handlePREvent(payload: any): Promise<void> {
+    const { action, pull_request } = payload;
+    
+    debug(`PR ${action}: #${pull_request.number} - ${pull_request.title}`);
+    
+    // Broadcast PR event to connected clients
+    this.broadcast({
+      type: 'github:pr',
+      data: {
+        action,
+        number: pull_request.number,
+        title: pull_request.title,
+        author: pull_request.user.login,
+        url: pull_request.html_url,
+      },
+    });
+  }
+
+  private async handleIssueEvent(payload: any): Promise<void> {
+    const { action, issue } = payload;
+    
+    debug(`Issue ${action}: #${issue.number} - ${issue.title}`);
+    
+    // Broadcast issue event to connected clients
+    this.broadcast({
+      type: 'github:issue',
+      data: {
+        action,
+        number: issue.number,
+        title: issue.title,
+        assignee: issue.assignee?.login,
+        url: issue.html_url,
+      },
+    });
+  }
+
+  private async handleReviewEvent(payload: any): Promise<void> {
+    const { action, review, pull_request } = payload;
+    
+    debug(`Review ${action} on PR #${pull_request.number} by ${review.user.login}`);
+    
+    // Broadcast review event to connected clients
+    this.broadcast({
+      type: 'github:review',
+      data: {
+        action,
+        prNumber: pull_request.number,
+        reviewer: review.user.login,
+        state: review.state,
+      },
+    });
   }
 
   private broadcast(message: { type: string; data: unknown }) {
